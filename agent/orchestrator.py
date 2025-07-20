@@ -88,7 +88,7 @@ class AIOrchestrator:
     
     def generate_react_component(self, layout_info: Dict[str, Any], project_description: str = "") -> str:
         """
-        Generate React component code from layout information with enhanced LLM processing.
+        Generate React component code from layout information with actual image reference.
         """
         # Generate smart component name
         component_name = generate_smart_component_name(
@@ -97,58 +97,105 @@ class AIOrchestrator:
             project_description=project_description
         )
         
-        # Create enhanced prompt with image analysis
-        prompt = self._create_enhanced_code_generation_prompt(layout_info, project_description, component_name)
-        
         print(f"🤖 Generating React component: {component_name}")
-        print(f"📝 Using enhanced LLM prompt with image analysis")
+        print(f"📝 Using image-referenced generation with visual analysis")
+        
+        # Check if we have image data for visual reference
+        image_base64 = layout_info.get('image_base64')
+        if image_base64:
+            print("📸 Using actual image reference for accurate generation")
+            return self._generate_with_image_reference(layout_info, project_description, component_name, image_base64)
+        else:
+            print("⚠️  No image reference available, using text-based generation")
+            return self._generate_without_image_reference(layout_info, project_description, component_name)
+    
+    def _generate_with_image_reference(self, layout_info: Dict[str, Any], project_description: str, component_name: str, image_base64: str) -> str:
+        """Generate component with actual image reference for accurate design replication."""
+        
+        # Create image-referenced prompt
+        prompt = self._create_image_referenced_prompt(layout_info, project_description, component_name)
         
         try:
             response = self.client.chat.completions.create(
-                model=self.text_model,
+                model="gpt-4o",  # Use vision model
                 messages=[
                     {
                         "role": "system",
-                        "content": f"""You are an expert React developer. You MUST generate a complete, working React functional component.
+                        "content": f"""You are an expert React developer and UI/UX designer. You MUST generate a complete, professional, production-ready React functional component that follows all modern UI/UX best practices.
 
-STRICT REQUIREMENTS:
+MANDATORY REQUIREMENTS - MUST INCLUDE ALL:
 1. Component name MUST be exactly: {component_name}
 2. MUST start with: import React from 'react';
-3. MUST have functional component: const {component_name} = () => {{
+3. MUST have: const {component_name} = () => {{
 4. MUST end with: export default {component_name};
-5. Use Tailwind CSS classes for ALL styling
-6. Create a responsive, modern design
-7. NO markdown code blocks (```jsx or ```)
-8. NO explanatory text before or after the code
-9. Return ONLY the complete React component code
+5. MUST use semantic HTML tags: <header>, <main>, <section>, <aside>, <nav>, <button>, <form>
+6. MUST include responsive classes: sm:, md:, lg:, xl: for different screen sizes
+7. MUST add hover states: hover:bg-blue-700, hover:shadow-lg, etc.
+8. MUST add focus states: focus:ring-2, focus:ring-blue-500, focus:outline-none
+9. MUST include transitions: transition-all, duration-200, ease-in-out
+10. MUST add accessibility: aria-label, role, tabIndex, alt attributes
+11. MUST use professional styling: shadows, borders, gradients, rounded corners
+12. MUST include interactive states: onClick, onSubmit, onChange handlers
+13. MUST be production-ready: no placeholder content, realistic data
+14. NO markdown code blocks (```jsx or ```)
+15. NO explanatory text before or after the code
 
-EXAMPLE STRUCTURE:
-import React from 'react';
+PROFESSIONAL STYLING REQUIREMENTS - MUST IMPLEMENT:
+- Use shadow-sm, shadow-md, shadow-lg for depth
+- Use rounded-md, rounded-lg for modern corners
+- Use border, border-gray-300 for subtle borders
+- Use hover:shadow-lg, hover:scale-105 for interactions
+- Use focus:ring-2, focus:ring-blue-500 for accessibility
+- Use transition-all, duration-200 for smooth animations
+- Use bg-gradient-to-r, from-blue-500, to-purple-600 for modern gradients
+- Use text-gray-900, text-gray-600, text-blue-600 for proper typography
+- Use space-y-4, space-x-4 for consistent spacing
 
-const {component_name} = () => {{
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {{/* Your component JSX here */}}
-    </div>
-  );
-}};
+RESPONSIVE DESIGN REQUIREMENTS - MUST IMPLEMENT:
+- Use sm:text-sm, md:text-base, lg:text-lg for responsive typography
+- Use sm:grid-cols-1, md:grid-cols-2, lg:grid-cols-3 for responsive grids
+- Use sm:p-4, md:p-6, lg:p-8 for responsive padding
+- Use hidden sm:block for responsive visibility
+- Use sm:w-full, md:w-1/2, lg:w-1/3 for responsive widths
 
-export default {component_name};
+ACCESSIBILITY REQUIREMENTS - MUST IMPLEMENT:
+- Add aria-label="Description" to all interactive elements
+- Add role="button", role="navigation", role="main" where appropriate
+- Add tabIndex="0" for keyboard navigation
+- Add alt="Description" for all images and icons
+- Use proper heading hierarchy: h1, h2, h3
+- Add focus:outline-none focus:ring-2 for keyboard users
 
-Generate the complete component now."""
+INTERACTIVE ELEMENTS - MUST IMPLEMENT:
+- Add onClick={{() => console.log('Action')}} to buttons
+- Add onSubmit={{(e) => e.preventDefault()}} to forms
+- Add onChange={{(e) => console.log(e.target.value)}} to inputs
+- Add disabled={{false}} state management
+- Add loading states with conditional rendering
+
+Generate a component that demonstrates professional, production-ready quality with ALL requirements implemented."""
                     },
                     {
                         "role": "user",
-                        "content": prompt
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_base64}",
+                                    "detail": "high"
+                                }
+                            }
+                        ]
                     }
                 ],
                 max_tokens=3000,
-                temperature=0.1  # Low temperature for consistency
+                temperature=0.05  # Very low temperature for accuracy
             )
             
             raw_code = response.choices[0].message.content.strip()
             
-            print(f"📝 Raw AI response length: {len(raw_code)} chars")
+            print(f"📝 Image-referenced AI response length: {len(raw_code)} chars")
             print(f"📝 First 100 chars: {raw_code[:100]}...")
             
             # Enhanced code cleaning
@@ -158,22 +205,471 @@ Generate the complete component now."""
             is_valid, final_code, errors = self._enhanced_code_validation(cleaned_code, component_name)
             
             if is_valid:
-                log_success(f"✅ AI generated valid React component: {component_name}")
-                print(f"✅ AI generation successful!")
+                log_success(f"✅ AI generated image-referenced component: {component_name}")
+                print(f"✅ Image-referenced generation successful!")
                 return final_code
             else:
-                log_error(f"❌ AI-generated code validation failed: {errors}")
-                print(f"❌ AI validation failed: {errors}")
+                log_error(f"❌ Image-referenced generation validation failed: {errors}")
+                print(f"❌ Image validation failed: {errors}")
+                print("🔄 Trying text-based generation as fallback")
+                return self._generate_without_image_reference(layout_info, project_description, component_name)
+            
+        except Exception as e:
+            log_error(f"❌ Image-referenced generation error: {e}")
+            print(f"❌ Image generation error: {e}")
+            print("🔄 Trying text-based generation as fallback")
+            return self._generate_without_image_reference(layout_info, project_description, component_name)
+    
+    def _generate_without_image_reference(self, layout_info: Dict[str, Any], project_description: str, component_name: str) -> str:
+        """Generate component without image reference (fallback method)."""
+        
+        # Create enhanced prompt with image analysis
+        prompt = self._create_enhanced_code_generation_prompt(layout_info, project_description, component_name)
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.text_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "role": "system",
+                        "content": f"""You are an expert React developer and UI/UX designer. You MUST generate a complete, professional, production-ready React functional component.
+
+MANDATORY REQUIREMENTS - MUST INCLUDE ALL:
+1. Component name MUST be exactly: {component_name}
+2. MUST start with: import React from 'react';
+3. MUST have: const {component_name} = () => {{
+4. MUST end with: export default {component_name};
+5. MUST use semantic HTML tags: <header>, <main>, <section>, <aside>, <nav>, <button>, <form>
+6. MUST include responsive classes: sm:, md:, lg:, xl: for different screen sizes
+7. MUST add hover states: hover:bg-blue-700, hover:shadow-lg, etc.
+8. MUST add focus states: focus:ring-2, focus:ring-blue-500, focus:outline-none
+9. MUST include transitions: transition-all, duration-200, ease-in-out
+10. MUST add accessibility: aria-label, role, tabIndex, alt attributes
+11. MUST use professional styling: shadows, borders, gradients, rounded corners
+12. MUST include interactive states: onClick, onSubmit, onChange handlers
+13. MUST be production-ready: no placeholder content, realistic data
+14. NO markdown code blocks (```jsx or ```)
+15. NO explanatory text before or after the code
+
+PROFESSIONAL STYLING REQUIREMENTS - MUST IMPLEMENT:
+- Use shadow-sm, shadow-md, shadow-lg for depth
+- Use rounded-md, rounded-lg for modern corners
+- Use border, border-gray-300 for subtle borders
+- Use hover:shadow-lg, hover:scale-105 for interactions
+- Use focus:ring-2, focus:ring-blue-500 for accessibility
+- Use transition-all, duration-200 for smooth animations
+- Use bg-gradient-to-r, from-blue-500, to-purple-600 for modern gradients
+- Use text-gray-900, text-gray-600, text-blue-600 for proper typography
+- Use space-y-4, space-x-4 for consistent spacing
+
+RESPONSIVE DESIGN REQUIREMENTS - MUST IMPLEMENT:
+- Use sm:text-sm, md:text-base, lg:text-lg for responsive typography
+- Use sm:grid-cols-1, md:grid-cols-2, lg:grid-cols-3 for responsive grids
+- Use sm:p-4, md:p-6, lg:p-8 for responsive padding
+- Use hidden sm:block for responsive visibility
+- Use sm:w-full, md:w-1/2, lg:w-1/3 for responsive widths
+
+ACCESSIBILITY REQUIREMENTS - MUST IMPLEMENT:
+- Add aria-label="Description" to all interactive elements
+- Add role="button", role="navigation", role="main" where appropriate
+- Add tabIndex="0" for keyboard navigation
+- Add alt="Description" for all images and icons
+- Use proper heading hierarchy: h1, h2, h3
+- Add focus:outline-none focus:ring-2 for keyboard users
+
+INTERACTIVE ELEMENTS - MUST IMPLEMENT:
+- Add onClick={{() => console.log('Action')}} to buttons
+- Add onSubmit={{(e) => e.preventDefault()}} to forms
+- Add onChange={{(e) => console.log(e.target.value)}} to inputs
+- Add disabled={{false}} state management
+- Add loading states with conditional rendering
+
+Generate a professional component that demonstrates ALL requirements implemented."""
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                max_tokens=3000,
+                temperature=0.1
+            )
+            
+            raw_code = response.choices[0].message.content.strip()
+            
+            print(f"📝 Text-based AI response length: {len(raw_code)} chars")
+            
+            # Enhanced code cleaning
+            cleaned_code = self._enhanced_code_cleaning(raw_code, component_name)
+            
+            # Enhanced validation
+            is_valid, final_code, errors = self._enhanced_code_validation(cleaned_code, component_name)
+            
+            if is_valid:
+                log_success(f"✅ AI generated text-based component: {component_name}")
+                print(f"✅ Text-based generation successful!")
+                return final_code
+            else:
+                log_error(f"❌ Text-based generation validation failed: {errors}")
+                print(f"❌ Text validation failed: {errors}")
                 print("🔄 Using enhanced fallback component")
                 return self._generate_fallback_component(layout_info, component_name)
             
         except Exception as e:
-            log_error(f"❌ AI generation error: {e}")
-            print(f"❌ AI generation error: {e}")
+            log_error(f"❌ Text-based generation error: {e}")
+            print(f"❌ Text generation error: {e}")
             print("🔄 Using enhanced fallback component")
             return self._generate_fallback_component(layout_info, component_name)
     
+    def _create_image_referenced_prompt(self, layout_info: Dict[str, Any], project_description: str, component_name: str) -> str:
+        """Create a prompt that emphasizes following the actual image design with comprehensive UI/UX constraints."""
+        filename = layout_info.get('filename', 'unknown')
+        elements = layout_info.get('basic_elements', [])
+        dimensions = layout_info.get('dimensions', {})
+        
+        # Use image analysis if available, but emphasize visual accuracy
+        page_type = layout_info.get('page_type', 'generic')
+        page_description = layout_info.get('page_description', '')
+        
+        return f"""
+        CRITICAL: Analyze the provided UI design image and create a React component that EXACTLY matches what you see with professional UI/UX standards.
+
+        🎯 PRIMARY PROJECT REQUIREMENTS (HIGHEST PRIORITY):
+        {project_description}
+        
+        ⚠️  IMPORTANT: The above project description contains specific requirements, features, and instructions that MUST be incorporated into the component. Do not ignore these requirements - they are the primary goals for this component.
+
+        UX DESIGN INTERPRETATION REQUIREMENTS:
+        - Take as much inspiration as possible from the provided image - replicate every visual detail
+        - Use the project description to understand the specific functionality and features needed
+        - Make sure the design is intuitive and user-friendly with clear visual hierarchy
+        - Don't miss any important UI elements shown in the image - include every button, input, icon, text
+        - Recreate each screen or state shown in the image with pixel-perfect accuracy
+        - Group related images into a single layout if applicable
+        - Build separate components for unrelated sections if they serve different purposes
+        - Avoid basic/unstyled HTML elements – ensure polished, professional styling
+        - Use semantic HTML tags (`<section>`, `<button>`, `<nav>`, `<header>`, `<main>`, `<aside>`, `<footer>`, etc.)
+        - Ensure all interactive elements are accessible and keyboard-navigable
+        - Use consistent color schemes and typography throughout
+        - Ensure the final output is production-ready with no placeholder content
+        - Make sure the design is responsive and works well on different screen sizes
+        - Create attractive and modern design, suitable for a professional application
+
+        VISUAL ANALYSIS REQUIREMENTS:
+        - Look at the ACTUAL colors in the image and use matching Tailwind CSS classes
+        - Observe the EXACT layout structure, spacing, and alignment
+        - Notice the specific positioning of elements (top, center, left, right, etc.)
+        - If the design is rough/sketchy, interpret it as a professional, polished interface
+        - Don't assume standard UI patterns - follow the ACTUAL visual design
+        - Match text content if visible in the image, or create realistic professional content
+        - Replicate button styles, shapes, and colors from the image with enhanced polish
+        - Follow the actual color scheme (backgrounds, text, accents) with professional refinement
+        - Identify and recreate any icons, graphics, or visual elements shown
+        
+        COMPONENT GROUPING AND SEPARATION LOGIC:
+        - Group related images into one layout or screen where applicable
+        - If the image shows multiple related sections (header + main content + sidebar), combine them into one cohesive component
+        - Separate distinct UI parts into different components if they don't seem to be part of the same page
+        - If the image contains clearly separate UI elements (like a modal + background page), focus on the primary element
+        - For complex layouts, create logical sections within the single component rather than splitting unnecessarily
+        - Maintain visual hierarchy and relationships between elements as shown in the image
+        
+        PROFESSIONAL STYLING REQUIREMENTS:
+        - Use modern Tailwind CSS classes for professional appearance
+        - Implement proper hover states, focus states, and transitions
+        - Add subtle shadows, borders, and rounded corners for polish
+        - Use appropriate spacing (padding, margins) for visual breathing room
+        - Implement proper typography hierarchy with varied font sizes and weights
+        - Add loading states, disabled states for interactive elements where appropriate
+        - Use consistent color palette throughout the component
+        - Implement proper form validation styling if forms are present
+        
+        ACCESSIBILITY AND INTERACTION REQUIREMENTS:
+        - Add proper ARIA labels, roles, and descriptions
+        - Ensure keyboard navigation works for all interactive elements
+        - Use semantic HTML elements for screen reader compatibility
+        - Implement proper focus management and visual focus indicators
+        - Add alt text for images and icons
+        - Ensure color contrast meets WCAG guidelines
+        - Use proper heading hierarchy (h1, h2, h3, etc.)
+        
+        RESPONSIVE DESIGN REQUIREMENTS:
+        - Use responsive Tailwind classes (sm:, md:, lg:, xl:)
+        - Ensure layout adapts gracefully to different screen sizes
+        - Stack elements vertically on mobile when appropriate
+        - Adjust font sizes and spacing for different breakpoints
+        - Hide/show elements appropriately for different screen sizes
+        - Ensure touch targets are appropriately sized for mobile
+        
+        PRODUCTION-READY REQUIREMENTS:
+        - No placeholder content - use realistic, professional text and data
+        - Include proper error handling for forms and interactive elements
+        - Add loading states and feedback for user actions
+        - Implement proper data formatting (dates, numbers, currency)
+        - Use realistic sample data that matches the application context
+        - Include proper navigation and routing considerations
+        - Add appropriate micro-interactions and animations
+        
+        COMPONENT DETAILS:
+        - Component name: {component_name}
+        - Source file: {filename}
+        - Detected page type: {page_type}
+        - Description: {page_description}
+        - Screen dimensions: {dimensions.get('width', 'unknown')}x{dimensions.get('height', 'unknown')}px
+        
+        DETECTED ELEMENTS (use as reference, but prioritize visual analysis):
+        - Elements found: {len(elements)} ({', '.join(set([e.get('type', 'unknown') for e in elements]))})
+        
+        🎯 REMEMBER: The project description at the top contains the most important requirements. Make sure to incorporate all specified features, functionality, and design requirements from the project description into your component.
+        
+        TECHNICAL IMPLEMENTATION:
+        - Use Tailwind CSS classes that match the visual colors and styling with professional enhancements
+        - Implement responsive design with mobile-first approach
+        - Use semantic HTML elements for proper document structure
+        - Add comprehensive accessibility attributes
+        - Ensure the layout matches the image proportions with responsive adaptations
+        - Use appropriate Tailwind color classes with consistent palette
+        - Implement proper spacing with Tailwind spacing classes
+        - Add hover effects, transitions, and micro-interactions
+        - Use modern CSS Grid and Flexbox layouts where appropriate
+        
+        IMPORTANT CONSTRAINTS:
+        - DO NOT use basic HTML elements without styling
+        - DO NOT create placeholder or dummy content
+        - DO NOT miss any UI elements visible in the image
+        - DO NOT assume generic patterns - follow the actual design
+        - DO NOT ignore the project description requirements
+        - DO create polished, professional interfaces
+        - DO ensure production-ready quality
+        - DO make it fully responsive and accessible
+        - DO use semantic HTML throughout
+        - DO implement proper interactive states
+        - DO create intuitive and user-friendly interfaces
+        - DO incorporate all features mentioned in the project description
+        
+        Generate a React component that represents a professional, production-ready implementation of the design shown in the image, with all UI/UX best practices applied and all project requirements fulfilled.
+        """
+    
     def _create_enhanced_code_generation_prompt(self, layout_info: Dict[str, Any], project_description: str, component_name: str) -> str:
+        """Create an enhanced prompt with comprehensive UI/UX constraints and professional standards."""
+        filename = layout_info.get('filename', 'unknown')
+        elements = layout_info.get('basic_elements', [])
+        dimensions = layout_info.get('dimensions', {})
+        
+        # Use image analysis if available
+        image_analysis = layout_info.get('image_analysis', {})
+        page_type = layout_info.get('page_type', 'generic')
+        page_description = layout_info.get('page_description', '')
+        
+        # Create specific instructions based on page type with comprehensive UI/UX constraints
+        if page_type == 'login':
+            specific_instructions = f"""
+            Create a professional LOGIN PAGE component named {component_name} with:
+            - Centered login form (max-width: 400px) with polished card design and subtle shadow
+            - Email input field with proper validation styling, focus states, and error handling
+            - Password input field with show/hide toggle and validation feedback
+            - Primary "Sign In" button with hover effects and loading state
+            - "Forgot Password?" link with proper hover styling
+            - Social login options if applicable (Google, GitHub, etc.) with branded styling
+            - Clean, professional design with consistent spacing and typography
+            - Proper form validation with real-time feedback
+            - Accessibility features: ARIA labels, keyboard navigation, focus management
+            - Responsive design that works on mobile and desktop
+            - Production-ready with no placeholder content
+            """
+        elif page_type == 'dashboard':
+            specific_instructions = f"""
+            Create a professional DASHBOARD component named {component_name} with:
+            - Top navigation bar with logo, search, notifications, and user menu with dropdown
+            - Sidebar navigation with icons, active states, and hover effects (collapsible on mobile)
+            - Grid of metric cards with real data, trend indicators, and interactive hover states
+            - Each card with proper typography hierarchy, icons, and color-coded values
+            - Charts and data visualization sections with loading states and tooltips
+            - Recent activity feed with timestamps, user avatars, and action descriptions
+            - Quick action buttons with proper styling and feedback
+            - Professional color scheme with consistent branding
+            - Responsive layout that adapts to different screen sizes
+            - Accessibility: proper headings, ARIA labels, keyboard navigation
+            - Production-ready with realistic data and proper formatting
+            """
+        elif page_type == 'profile':
+            specific_instructions = f"""
+            Create a professional USER PROFILE component named {component_name} with:
+            - Profile header with avatar upload, cover photo, and user information
+            - Tabbed interface for different sections (Profile, Settings, Security, Preferences)
+            - Personal information form with proper validation and error handling
+            - Account settings with toggle switches, dropdowns, and proper feedback
+            - Security section with password change, 2FA setup, and session management
+            - Save/Update buttons with loading states and success feedback
+            - Professional styling with consistent spacing and typography
+            - Form validation with real-time feedback and error messages
+            - Accessibility: proper form labels, keyboard navigation, screen reader support
+            - Responsive design that works across all devices
+            - Production-ready with realistic user data and proper formatting
+            """
+        elif page_type == 'homepage':
+            specific_instructions = f"""
+            Create a professional HOMEPAGE component named {component_name} with:
+            - Navigation header with logo, menu items, and call-to-action button
+            - Hero section with compelling headline, description, and primary CTA
+            - Features section with icons, descriptions, and benefits
+            - Testimonials or social proof section with user photos and quotes
+            - Pricing or product showcase with comparison tables
+            - Footer with links, contact information, and social media
+            - Professional marketing design with consistent branding
+            - Smooth scrolling and micro-interactions
+            - Accessibility: proper headings, alt text, keyboard navigation
+            - Fully responsive design optimized for all devices
+            - Production-ready with compelling copy and realistic content
+            """
+        elif page_type == 'product':
+            specific_instructions = f"""
+            Create a professional E-COMMERCE component named {component_name} with:
+            - Product grid with high-quality images, titles, prices, and ratings
+            - Advanced filtering sidebar with categories, price ranges, and brand filters
+            - Search functionality with autocomplete and search suggestions
+            - Product cards with hover effects, quick view, and add to cart buttons
+            - Shopping cart with item count, total, and checkout process
+            - Pagination or infinite scroll with loading states
+            - Professional e-commerce styling with consistent product presentation
+            - Wishlist functionality and product comparison features
+            - Accessibility: proper product information, keyboard navigation
+            - Mobile-optimized design with touch-friendly interactions
+            - Production-ready with realistic product data and pricing
+            """
+        else:
+            # Generic but comprehensive instructions with UI/UX constraints
+            specific_instructions = f"""
+            Create a professional {page_type.upper()} component named {component_name} with:
+            - Modern, responsive layout using professional design principles
+            - Header section with proper navigation and branding
+            - Main content area with logical sections and clear hierarchy
+            - Interactive elements with proper hover, focus, and active states
+            - Professional styling with consistent spacing, typography, and colors
+            - Semantic HTML structure with proper accessibility attributes
+            - Responsive design that adapts to all screen sizes
+            - Production-ready with realistic content and proper data formatting
+            - Polished UI with subtle animations and micro-interactions
+            - Error handling and loading states for dynamic content
+            """
+        
+        return f"""
+        Generate a professional, production-ready React functional component based on this analysis:
+        
+        UX DESIGN INTERPRETATION REQUIREMENTS:
+        - Take as much inspiration as possible from the detected elements and page type
+        - Make sure the design is intuitive and user-friendly with clear visual hierarchy
+        - Don't miss any important UI elements that should be present for this page type
+        - Recreate professional versions of common UI patterns for this screen type
+        - Group related functionality into logical sections
+        - Build cohesive layouts that serve the user's primary goals
+        - Avoid basic/unstyled HTML elements – ensure polished, professional styling
+        - Use semantic HTML tags (`<section>`, `<button>`, `<nav>`, `<header>`, `<main>`, `<aside>`, `<footer>`, etc.)
+        - Ensure all interactive elements are accessible and keyboard-navigable
+        - Use consistent color schemes and typography throughout
+        - Ensure the final output is production-ready with no placeholder content
+        - Make sure the design is responsive and works well on different screen sizes
+        - Create attractive and modern design, suitable for a professional application
+        
+        COMPONENT REQUIREMENTS:
+        - Component name: {component_name}
+        - Source file: {filename}
+        - Page type: {page_type}
+        - Description: {page_description}
+        
+        DETECTED ELEMENTS:
+        - UI elements found: {len(elements)} ({', '.join(set([e.get('type', 'unknown') for e in elements]))})
+        - Screen dimensions: {dimensions.get('width', 'unknown')}x{dimensions.get('height', 'unknown')}px
+        
+        COMPONENT GROUPING AND SEPARATION GUIDELINES:
+        - Group related images into one layout or screen where applicable
+        - Separate distinct UI parts into different components if they don't seem to be part of the same page
+        - For multi-section layouts (navigation + content + footer), create one component with proper semantic sections
+        - Use logical grouping for related functionality (all form inputs together, all navigation together, etc.)
+        - Maintain visual hierarchy and relationships between elements
+        - Create cohesive layouts that reflect natural user flow and interaction patterns
+        
+        SPECIFIC IMPLEMENTATION INSTRUCTIONS:
+        {specific_instructions}
+        
+        PROJECT CONTEXT:
+        {project_description}
+        
+        PROFESSIONAL STYLING REQUIREMENTS:
+        - Use modern Tailwind CSS classes for professional appearance
+        - Implement proper hover states, focus states, and transitions
+        - Add subtle shadows, borders, and rounded corners for polish
+        - Use appropriate spacing (padding, margins) for visual breathing room
+        - Implement proper typography hierarchy with varied font sizes and weights
+        - Add loading states, disabled states for interactive elements where appropriate
+        - Use consistent color palette throughout the component
+        - Implement proper form validation styling if forms are present
+        - Add micro-interactions and smooth transitions
+        
+        ACCESSIBILITY AND INTERACTION REQUIREMENTS:
+        - Add proper ARIA labels, roles, and descriptions
+        - Ensure keyboard navigation works for all interactive elements
+        - Use semantic HTML elements for screen reader compatibility
+        - Implement proper focus management and visual focus indicators
+        - Add alt text for images and icons
+        - Ensure color contrast meets professional standards
+        - Use proper heading hierarchy (h1, h2, h3, etc.)
+        - Implement proper form validation and error messaging
+        
+        RESPONSIVE DESIGN REQUIREMENTS:
+        - Use responsive Tailwind classes (sm:, md:, lg:, xl:, 2xl:)
+        - Ensure layout adapts gracefully to different screen sizes
+        - Stack elements vertically on mobile when appropriate
+        - Adjust font sizes and spacing for different breakpoints
+        - Hide/show elements appropriately for different screen sizes
+        - Ensure touch targets are appropriately sized for mobile
+        - Optimize for both portrait and landscape orientations
+        
+        PRODUCTION-READY REQUIREMENTS:
+        - No placeholder content - use realistic, professional text and data
+        - Include proper error handling for forms and interactive elements
+        - Add loading states and feedback for user actions
+        - Implement proper data formatting (dates, numbers, currency)
+        - Use realistic sample data that matches the application context
+        - Include proper navigation and routing considerations
+        - Add appropriate status indicators and feedback messages
+        - Implement proper state management for interactive elements
+        
+        TECHNICAL IMPLEMENTATION:
+        - Use Tailwind CSS for ALL styling with professional design patterns
+        - Make it fully responsive with mobile-first approach
+        - Use semantic HTML elements (header, main, section, aside, footer, nav, button) for proper structure
+        - Add comprehensive accessibility attributes (ARIA labels, roles, descriptions)
+        - Include hover states, focus states, and smooth transitions
+        - Use modern React functional component patterns with proper state management
+        - Implement realistic, professional content and data
+        - Ensure proper JSX syntax and component structure
+        - Group related elements in logical containers with proper spacing
+        - Separate distinct functional areas with appropriate visual hierarchy
+        
+        LAYOUT STRUCTURE GUIDELINES:
+        - For full-page layouts: Use semantic sections that group related content professionally
+        - For card-based designs: Group related cards in appropriate containers with consistent styling
+        - For form layouts: Group form elements logically with proper validation and feedback
+        - For dashboard layouts: Organize metrics, charts, and controls in professional sections
+        - For navigation layouts: Group navigation elements with proper hierarchy and interaction states
+        
+        IMPORTANT CONSTRAINTS:
+        - DO NOT use basic HTML elements without professional styling
+        - DO NOT create placeholder or dummy content
+        - DO NOT miss important UI elements for this page type
+        - DO NOT use generic patterns without considering the specific use case
+        - DO create polished, professional interfaces with attention to detail
+        - DO ensure production-ready quality with proper error handling
+        - DO make it fully responsive and accessible
+        - DO use semantic HTML throughout with proper structure
+        - DO implement proper interactive states and feedback
+        - DO create intuitive and user-friendly interfaces that serve real user needs
+        
+        Generate the complete React component code now. Start with import React and end with export default.
+        Create a component that represents professional, production-ready quality with comprehensive UI/UX best practices applied.
+        """
         """Create an enhanced prompt with image analysis and specific instructions."""
         filename = layout_info.get('filename', 'unknown')
         elements = layout_info.get('basic_elements', [])
@@ -244,7 +740,12 @@ Generate the complete component now."""
             """
         
         return f"""
-        Generate a complete React functional component based on this analysis:
+        Generate a professional, production-ready React functional component based on this analysis:
+        
+        🎯 PRIMARY PROJECT REQUIREMENTS (HIGHEST PRIORITY):
+        {project_description}
+        
+        ⚠️  CRITICAL: The above project description contains specific requirements, features, and instructions that MUST be incorporated into the component. This is the most important part of your task - ensure all specified features and functionality are included.
         
         COMPONENT REQUIREMENTS:
         - Component name: {component_name}
@@ -256,11 +757,10 @@ Generate the complete component now."""
         - UI elements found: {len(elements)} ({', '.join(set([e.get('type', 'unknown') for e in elements]))})
         - Screen dimensions: {dimensions.get('width', 'unknown')}x{dimensions.get('height', 'unknown')}px
         
-        SPECIFIC INSTRUCTIONS:
+        SPECIFIC IMPLEMENTATION INSTRUCTIONS:
         {specific_instructions}
         
-        PROJECT CONTEXT:
-        {project_description}
+        🎯 REMEMBER: Incorporate ALL features, functionality, and requirements mentioned in the project description above. This is the primary goal of the component.
         
         TECHNICAL REQUIREMENTS:
         - Use Tailwind CSS for ALL styling

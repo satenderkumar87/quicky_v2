@@ -169,17 +169,20 @@ def generate_ui_from_uploads(uploaded_files: list, project_description: str):
                     project_description=f"{project_description}. Page type: {image_analysis.get('page_type', 'generic')}"
                 )
                 
-                # Enhanced layout info with image analysis
+                # Enhanced layout info with image analysis AND image reference
                 layout_info = {
                     'filename': img_data['filename'],
                     'layout_description': f"UI layout with {len(img_data['elements'])} detected elements",
                     'basic_elements': img_data['elements'],
                     'dimensions': img_data['dimensions'],
-                    # NEW: Add image analysis results
+                    # Image analysis results
                     'image_analysis': image_analysis,
                     'page_type': image_analysis.get('page_type', 'generic'),
                     'page_description': image_analysis.get('page_description', ''),
-                    'suggested_elements': image_analysis.get('main_elements', [])
+                    'suggested_elements': image_analysis.get('main_elements', []),
+                    # CRITICAL: Include actual image data for visual reference
+                    'image_base64': img_data.get('image_base64'),  # For AI visual analysis
+                    'raw_data': img_data.get('raw_data')  # For backup processing
                 }
                 
                 print(f"📊 Image analysis: {image_analysis.get('page_type', 'unknown')} page")
