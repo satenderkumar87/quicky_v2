@@ -1,7 +1,7 @@
 
-# 🧠 AI-Powered UI Generator (Builder.io Fusion Clone)
+# 🧠 AI-Powered UI Generator
 
-This project replicates core functionalities of Builder.io Fusion. It converts **UI screenshots and design descriptions** into **production-ready ReactJS UIs** using AI. The system uses OpenAI for layout reasoning, component generation, and professional UI assumptions when input is incomplete.
+This project converts **UI screenshots and design descriptions** into **production-ready ReactJS UIs** using AI. The system uses OpenAI for layout reasoning, component generation, and professional UI assumptions when input is incomplete.
 
 ---
 
