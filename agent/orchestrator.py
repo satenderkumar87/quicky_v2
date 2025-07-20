@@ -88,7 +88,7 @@ class AIOrchestrator:
     
     def generate_react_component(self, layout_info: Dict[str, Any], project_description: str = "") -> str:
         """
-        Generate React component code from layout information with comprehensive validation.
+        Generate React component code from layout information with enhanced LLM processing.
         """
         # Generate smart component name
         component_name = generate_smart_component_name(
@@ -97,7 +97,11 @@ class AIOrchestrator:
             project_description=project_description
         )
         
-        prompt = self._create_code_generation_prompt(layout_info, project_description)
+        # Create enhanced prompt with image analysis
+        prompt = self._create_enhanced_code_generation_prompt(layout_info, project_description, component_name)
+        
+        print(f"🤖 Generating React component: {component_name}")
+        print(f"📝 Using enhanced LLM prompt with image analysis")
         
         try:
             response = self.client.chat.completions.create(
@@ -105,59 +109,171 @@ class AIOrchestrator:
                 messages=[
                     {
                         "role": "system",
-                        "content": f"""You are an expert React developer. Generate clean, production-ready React components using:
-                        - Modern React with functional components and hooks
-                        - Tailwind CSS for styling (latest version)
-                        - Responsive design principles (mobile-first)
-                        - Accessible HTML structure with proper ARIA labels
-                        - Clean, readable code with proper component structure
-                        - Modern JavaScript/JSX syntax
-                        
-                        CRITICAL REQUIREMENTS:
-                        - Component name MUST be: {component_name}
-                        - Return ONLY valid JavaScript/JSX code
-                        - NO markdown code blocks (```jsx or ```)
-                        - NO explanatory text or comments outside the code
-                        - NO feature descriptions or documentation
-                        - NO text after the export statement
-                        - Use simple className strings, avoid complex template literals
-                        - Ensure all JSX is properly closed and formatted
-                        
-                        The code must be ready to save directly as a .jsx file and build without errors."""
+                        "content": f"""You are an expert React developer. You MUST generate a complete, working React functional component.
+
+STRICT REQUIREMENTS:
+1. Component name MUST be exactly: {component_name}
+2. MUST start with: import React from 'react';
+3. MUST have functional component: const {component_name} = () => {{
+4. MUST end with: export default {component_name};
+5. Use Tailwind CSS classes for ALL styling
+6. Create a responsive, modern design
+7. NO markdown code blocks (```jsx or ```)
+8. NO explanatory text before or after the code
+9. Return ONLY the complete React component code
+
+EXAMPLE STRUCTURE:
+import React from 'react';
+
+const {component_name} = () => {{
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {{/* Your component JSX here */}}
+    </div>
+  );
+}};
+
+export default {component_name};
+
+Generate the complete component now."""
                     },
                     {
                         "role": "user",
                         "content": prompt
                     }
                 ],
-                max_tokens=2500,
-                temperature=0.05  # Very low temperature for maximum consistency
+                max_tokens=3000,
+                temperature=0.1  # Low temperature for consistency
             )
             
-            raw_code = response.choices[0].message.content
+            raw_code = response.choices[0].message.content.strip()
             
-            # Clean the AI-generated code
-            cleaned_code = clean_generated_code(raw_code)
+            print(f"📝 Raw AI response length: {len(raw_code)} chars")
+            print(f"📝 First 100 chars: {raw_code[:100]}...")
             
-            # Ensure the component name is correct in the code
-            cleaned_code = self._fix_component_name_in_code(cleaned_code, component_name)
+            # Enhanced code cleaning
+            cleaned_code = self._enhanced_code_cleaning(raw_code, component_name)
             
-            # Validate the cleaned code
-            is_valid, final_code, errors = validate_generated_code(cleaned_code, component_name)
+            # Enhanced validation
+            is_valid, final_code, errors = self._enhanced_code_validation(cleaned_code, component_name)
             
             if is_valid:
-                log_success(f"Generated valid React component: {component_name}")
+                log_success(f"✅ AI generated valid React component: {component_name}")
+                print(f"✅ AI generation successful!")
                 return final_code
             else:
-                log_error(f"AI-generated code had issues: {errors}")
-                clean_print("🔄 Using error-free fallback component")
+                log_error(f"❌ AI-generated code validation failed: {errors}")
+                print(f"❌ AI validation failed: {errors}")
+                print("🔄 Using enhanced fallback component")
                 return self._generate_fallback_component(layout_info, component_name)
             
         except Exception as e:
-            log_error(f"Error generating React component: {e}")
+            log_error(f"❌ AI generation error: {e}")
+            print(f"❌ AI generation error: {e}")
+            print("🔄 Using enhanced fallback component")
             return self._generate_fallback_component(layout_info, component_name)
     
-    def _create_code_generation_prompt(self, layout_info: Dict[str, Any], project_description: str) -> str:
+    def _create_enhanced_code_generation_prompt(self, layout_info: Dict[str, Any], project_description: str, component_name: str) -> str:
+        """Create an enhanced prompt with image analysis and specific instructions."""
+        filename = layout_info.get('filename', 'unknown')
+        elements = layout_info.get('basic_elements', [])
+        dimensions = layout_info.get('dimensions', {})
+        
+        # Use image analysis if available
+        image_analysis = layout_info.get('image_analysis', {})
+        page_type = layout_info.get('page_type', 'generic')
+        page_description = layout_info.get('page_description', '')
+        
+        # Create specific instructions based on page type
+        if page_type == 'login':
+            specific_instructions = f"""
+            Create a LOGIN PAGE component named {component_name} with:
+            - Centered login form (max-width: 400px)
+            - Email input field with proper validation styling
+            - Password input field with proper validation styling
+            - "Sign In" button (blue, full width)
+            - "Forgot Password?" link
+            - Clean, professional design with white card on gray background
+            - Proper form structure with labels and placeholders
+            """
+        elif page_type == 'dashboard':
+            specific_instructions = f"""
+            Create a DASHBOARD component named {component_name} with:
+            - Top navigation bar with title and user menu
+            - Grid of 4 metric cards showing statistics (users, revenue, orders, conversion)
+            - Each card with title, large number, and trend indicator
+            - Recent activity section with timeline items
+            - Charts/analytics placeholder section
+            - Professional admin interface styling with proper spacing
+            """
+        elif page_type == 'profile':
+            specific_instructions = f"""
+            Create a USER PROFILE component named {component_name} with:
+            - Profile header with avatar placeholder and user name
+            - Personal information form section with input fields
+            - Account settings section with toggle switches
+            - Save/Update buttons
+            - Clean, user-friendly design with proper form styling
+            """
+        elif page_type == 'homepage':
+            specific_instructions = f"""
+            Create a HOMEPAGE component named {component_name} with:
+            - Navigation header with logo and menu items
+            - Hero section with large heading and call-to-action button
+            - Features section with 3-4 feature cards
+            - Professional marketing-focused design
+            """
+        elif page_type == 'product':
+            specific_instructions = f"""
+            Create an E-COMMERCE component named {component_name} with:
+            - Product grid layout (3-4 columns)
+            - Product cards with image placeholder, title, and price
+            - Filter sidebar with categories and price ranges
+            - Search functionality
+            - Shopping cart integration
+            """
+        else:
+            # Generic but specific instructions
+            specific_instructions = f"""
+            Create a {page_type.upper()} component named {component_name} with:
+            - Modern, responsive layout using Tailwind CSS
+            - Header section with appropriate title
+            - Main content area with relevant sections
+            - Professional styling with proper spacing and colors
+            - Interactive elements like buttons and forms where appropriate
+            """
+        
+        return f"""
+        Generate a complete React functional component based on this analysis:
+        
+        COMPONENT REQUIREMENTS:
+        - Component name: {component_name}
+        - Source file: {filename}
+        - Page type: {page_type}
+        - Description: {page_description}
+        
+        DETECTED ELEMENTS:
+        - UI elements found: {len(elements)} ({', '.join(set([e.get('type', 'unknown') for e in elements]))})
+        - Screen dimensions: {dimensions.get('width', 'unknown')}x{dimensions.get('height', 'unknown')}px
+        
+        SPECIFIC INSTRUCTIONS:
+        {specific_instructions}
+        
+        PROJECT CONTEXT:
+        {project_description}
+        
+        TECHNICAL REQUIREMENTS:
+        - Use Tailwind CSS for ALL styling
+        - Make it fully responsive (mobile-first approach)
+        - Use semantic HTML elements (header, main, section, etc.)
+        - Add proper ARIA labels for accessibility
+        - Include hover states and smooth transitions
+        - Use modern React functional component pattern
+        - Add realistic placeholder content
+        - Ensure proper JSX syntax and structure
+        
+        Generate the complete React component code now. Start with import React and end with export default.
+        """
         """Create a detailed prompt for code generation."""
         filename = layout_info.get('filename', 'unknown')
         elements = layout_info.get('basic_elements', [])
@@ -274,34 +390,143 @@ class AIOrchestrator:
                 - Clean, content-focused design
                 """
         
-        return f"""
-        Generate a React component for a {page_type.upper()} PAGE based on this analysis:
+    def _enhanced_code_cleaning(self, raw_code: str, component_name: str) -> str:
+        """Enhanced code cleaning with better error handling."""
+        import re
         
-        **SPECIFIC LAYOUT REQUIREMENTS:**
-        {specific_layout}
+        # Remove markdown code blocks
+        code = re.sub(r'```(?:jsx?|javascript)?\n?', '', raw_code)
+        code = re.sub(r'```\n?', '', code)
         
-        **DETECTED ELEMENTS:**
-        - Elements found: {len(elements)} ({', '.join(set(element_types))})
-        - Screen size: {dimensions.get('width', 'unknown')}x{dimensions.get('height', 'unknown')}px
-        - Source: {filename}
+        # Remove any explanatory text before import
+        lines = code.split('\n')
+        cleaned_lines = []
+        found_import = False
         
-        **PROJECT CONTEXT:**
-        {project_description}
+        for line in lines:
+            if 'import React' in line:
+                found_import = True
+            
+            if found_import:
+                cleaned_lines.append(line)
         
-        **TECHNICAL REQUIREMENTS:**
-        - Use Tailwind CSS for ALL styling
-        - Make it fully responsive (mobile-first)
-        - Use semantic HTML elements
-        - Add proper ARIA labels for accessibility
-        - Include hover states and smooth transitions
-        - Use modern React functional component pattern
-        - Add realistic placeholder content specific to the page type
+        code = '\n'.join(cleaned_lines)
         
-        **IMPORTANT:** Create a layout that is DISTINCTLY DIFFERENT from other page types. 
-        The {page_type} page should have a unique structure and purpose-specific elements.
+        # Ensure proper import statement
+        if not code.strip().startswith('import React'):
+            code = "import React from 'react';\n\n" + code
         
-        Generate complete, production-ready JSX code that clearly represents a {page_type} interface.
-        """
+        # Fix component name if needed
+        code = self._fix_component_name_in_code(code, component_name)
+        
+        # Ensure proper export
+        if f'export default {component_name}' not in code:
+            code = code.rstrip() + f'\n\nexport default {component_name};'
+        
+        return code.strip()
+    
+    def _enhanced_code_validation(self, code: str, component_name: str) -> tuple:
+        """Enhanced code validation with detailed error checking."""
+        errors = []
+        
+        # Check for import statement
+        if 'import React' not in code:
+            errors.append('Missing React import statement')
+        
+        # Check for functional component declaration
+        if f'const {component_name} = () =>' not in code and f'function {component_name}(' not in code:
+            errors.append('Missing functional component declaration')
+        
+        # Check for export statement
+        if f'export default {component_name}' not in code:
+            errors.append('Missing export default statement')
+        
+        # Check for return statement
+        if 'return (' not in code and 'return<' not in code:
+            errors.append('Missing return statement')
+        
+        # Check for basic JSX structure
+        if '<div' not in code and '<main' not in code and '<section' not in code:
+            errors.append('Missing JSX elements')
+        
+        # Check for proper JSX closing
+        open_tags = code.count('<div')
+        close_tags = code.count('</div>')
+        if open_tags > 0 and close_tags == 0:
+            errors.append('Unclosed JSX tags detected')
+        
+        # If no errors, code is valid
+        if not errors:
+            return True, code, []
+        
+        # Try to fix common issues
+        fixed_code = self._attempt_code_fixes(code, component_name, errors)
+        
+        # Re-validate fixed code
+        if self._quick_validation(fixed_code, component_name):
+            return True, fixed_code, []
+        
+        return False, code, errors
+    
+    def _attempt_code_fixes(self, code: str, component_name: str, errors: list) -> str:
+        """Attempt to fix common code issues."""
+        fixed_code = code
+        
+        # Fix missing import
+        if 'Missing React import statement' in errors:
+            if not fixed_code.strip().startswith('import React'):
+                fixed_code = "import React from 'react';\n\n" + fixed_code
+        
+        # Fix missing component declaration
+        if 'Missing functional component declaration' in errors:
+            if f'const {component_name} = () =>' not in fixed_code:
+                # Try to find and fix component declaration
+                import re
+                pattern = r'const\s+\w+\s*=\s*\(\s*\)\s*=>'
+                if re.search(pattern, fixed_code):
+                    fixed_code = re.sub(pattern, f'const {component_name} = () =>', fixed_code)
+                else:
+                    # Add component declaration if missing
+                    lines = fixed_code.split('\n')
+                    for i, line in enumerate(lines):
+                        if 'return (' in line or 'return<' in line:
+                            lines.insert(i, f'const {component_name} = () => {{')
+                            break
+                    fixed_code = '\n'.join(lines)
+        
+        # Fix missing export
+        if 'Missing export default statement' in errors:
+            if f'export default {component_name}' not in fixed_code:
+                fixed_code = fixed_code.rstrip() + f'\n\nexport default {component_name};'
+        
+        # Fix missing return statement
+        if 'Missing return statement' in errors:
+            if 'return (' not in fixed_code and 'return<' not in fixed_code:
+                # Try to add return statement
+                lines = fixed_code.split('\n')
+                for i, line in enumerate(lines):
+                    if '<div' in line and 'return' not in lines[max(0, i-1)]:
+                        lines[i] = '  return (' + line.strip()
+                        # Find closing and add );
+                        for j in range(len(lines)-1, i, -1):
+                            if '</div>' in lines[j] or '/>' in lines[j]:
+                                lines[j] = lines[j] + '\n  );'
+                                break
+                        break
+                fixed_code = '\n'.join(lines)
+        
+        return fixed_code
+    
+    def _quick_validation(self, code: str, component_name: str) -> bool:
+        """Quick validation check."""
+        required_elements = [
+            'import React',
+            f'const {component_name} = () =>',
+            'return (',
+            f'export default {component_name}'
+        ]
+        
+        return all(element in code for element in required_elements)
     
     def _fix_component_name_in_code(self, code: str, correct_name: str) -> str:
         """Fix component name in the generated code to match the intended name."""

@@ -222,7 +222,7 @@ const {component_name} = () => {{
 export default {component_name};"""
 
 def create_error_free_component(layout_info: Dict[str, Any], component_name: str = None) -> str:
-    """Create an error-free React component with TRULY DIFFERENT pages based on filename."""
+    """Create an error-free React component with TRULY DIFFERENT pages based on image analysis."""
     # Use provided component name or generate one
     if not component_name:
         component_name = generate_smart_component_name(
@@ -234,64 +234,77 @@ def create_error_free_component(layout_info: Dict[str, Any], component_name: str
     elements = layout_info.get('basic_elements', [])
     element_types = [elem.get('type', 'unknown') for elem in elements]
     
+    # NEW: Use image analysis results if available
+    image_analysis = layout_info.get('image_analysis', {})
+    page_type = layout_info.get('page_type', 'generic')
+    page_description = layout_info.get('page_description', '')
+    
     print(f"🔍 Template generator processing: {filename}")
     print(f"🔍 Detected elements: {element_types}")
     print(f"🔍 Component name: {component_name}")
+    print(f"🤖 LLM analyzed page type: {page_type}")
+    print(f"📝 Page description: {page_description}")
     
-    # ENHANCED filename analysis - check component name too
-    combined_analysis = f"{filename} {component_name.lower()}"
-    
-    # Primary filename-based detection
-    if 'login' in combined_analysis or 'signin' in combined_analysis or 'auth' in combined_analysis:
-        print("✅ Creating LOGIN page")
+    # PRIMARY: Use LLM image analysis results
+    if page_type == 'login':
+        print("✅ Creating LOGIN page (from LLM analysis)")
         return create_login_page(component_name)
-    elif 'dashboard' in combined_analysis or 'admin' in combined_analysis:
-        print("✅ Creating DASHBOARD page")
+    elif page_type == 'dashboard':
+        print("✅ Creating DASHBOARD page (from LLM analysis)")
         return create_dashboard_page(component_name)
-    elif 'profile' in combined_analysis or 'account' in combined_analysis or 'user' in combined_analysis:
-        print("✅ Creating PROFILE page")
+    elif page_type == 'profile':
+        print("✅ Creating PROFILE page (from LLM analysis)")
         return create_profile_page(component_name)
-    elif 'home' in combined_analysis or 'landing' in combined_analysis or 'main' in combined_analysis:
-        print("✅ Creating HOMEPAGE")
+    elif page_type == 'homepage':
+        print("✅ Creating HOMEPAGE (from LLM analysis)")
         return create_homepage(component_name)
-    elif 'product' in combined_analysis or 'shop' in combined_analysis or 'store' in combined_analysis:
-        print("✅ Creating E-COMMERCE page")
+    elif page_type == 'product':
+        print("✅ Creating E-COMMERCE page (from LLM analysis)")
         return create_ecommerce_page(component_name)
-    
-    # Secondary element-based detection
-    elif 'form' in element_types and 'button' in element_types:
-        print("✅ Creating FORM page (based on elements)")
+    elif page_type == 'form':
+        print("✅ Creating FORM page (from LLM analysis)")
         return create_form_page(component_name, elements)
-    elif 'table' in element_types:
-        print("✅ Creating DATA TABLE page (based on elements)")
+    elif page_type == 'data':
+        print("✅ Creating DATA TABLE page (from LLM analysis)")
         return create_data_page(component_name, elements)
-    elif 'navbar' in element_types and 'card' in element_types:
-        print("✅ Creating DASHBOARD page (based on elements)")
-        return create_dashboard_page(component_name)
-    elif 'card' in element_types:
-        print("✅ Creating CARD-BASED page (based on elements)")
-        return create_card_page(component_name, elements)
     
-    # For numeric filenames or unknown types, create varied pages based on component name
+    # SECONDARY: Fallback to filename analysis
     else:
-        print(f"⚠️  Unknown filename '{filename}', analyzing component name '{component_name}'")
+        combined_analysis = f"{filename} {component_name.lower()}"
         
-        # Use component name to determine page type
-        if 'dashboard' in component_name.lower():
-            print("✅ Creating DASHBOARD (from component name)")
-            return create_dashboard_page(component_name)
-        elif 'login' in component_name.lower() or 'form' in component_name.lower():
-            print("✅ Creating LOGIN FORM (from component name)")
+        if 'login' in combined_analysis or 'signin' in combined_analysis or 'auth' in combined_analysis:
+            print("✅ Creating LOGIN page (from filename)")
             return create_login_page(component_name)
-        elif 'profile' in component_name.lower() or 'user' in component_name.lower():
-            print("✅ Creating PROFILE (from component name)")
+        elif 'dashboard' in combined_analysis or 'admin' in combined_analysis:
+            print("✅ Creating DASHBOARD page (from filename)")
+            return create_dashboard_page(component_name)
+        elif 'profile' in combined_analysis or 'account' in combined_analysis or 'user' in combined_analysis:
+            print("✅ Creating PROFILE page (from filename)")
             return create_profile_page(component_name)
-        elif 'main' in component_name.lower() or 'home' in component_name.lower():
-            print("✅ Creating HOMEPAGE (from component name)")
+        elif 'home' in combined_analysis or 'landing' in combined_analysis or 'main' in combined_analysis:
+            print("✅ Creating HOMEPAGE (from filename)")
             return create_homepage(component_name)
+        elif 'product' in combined_analysis or 'shop' in combined_analysis or 'store' in combined_analysis:
+            print("✅ Creating E-COMMERCE page (from filename)")
+            return create_ecommerce_page(component_name)
+        
+        # TERTIARY: Element-based detection
+        elif 'form' in element_types and 'button' in element_types:
+            print("✅ Creating FORM page (from elements)")
+            return create_form_page(component_name, elements)
+        elif 'table' in element_types:
+            print("✅ Creating DATA TABLE page (from elements)")
+            return create_data_page(component_name, elements)
+        elif 'navbar' in element_types and 'card' in element_types:
+            print("✅ Creating DASHBOARD page (from elements)")
+            return create_dashboard_page(component_name)
+        elif 'card' in element_types:
+            print("✅ Creating CARD-BASED page (from elements)")
+            return create_card_page(component_name, elements)
+        
+        # FINAL: Create varied pages for numeric/unknown filenames
         else:
-            # Create different page types based on filename pattern
-            print(f"✅ Creating UNIQUE page for '{filename}'")
+            print(f"✅ Creating VARIED page for unknown type")
             return create_varied_page_by_filename(component_name, filename, elements)
 
 def create_homepage(component_name: str) -> str:
@@ -393,7 +406,378 @@ const {component_name} = () => {{
 
 export default {component_name};"""
 
-def create_unique_page(component_name: str, filename: str) -> str:
+def create_card_page(component_name: str, elements: List[Dict]) -> str:
+    """Create a card-based page component."""
+    return f"""import React from 'react';
+
+const {component_name} = () => {{
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto py-8 px-4">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Card Gallery</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {{[1,2,3,4,5,6].map(i => (
+            <div key={{i}} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                <span className="text-white text-lg font-semibold">Card {{i}}</span>
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Card Title {{i}}
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  This is a sample card with some descriptive content.
+                </p>
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                  Learn More
+                </button>
+              </div>
+            </div>
+          ))}}
+        </div>
+      </div>
+    </div>
+  );
+}};
+
+export default {component_name};"""
+
+def create_varied_page_by_filename(component_name: str, filename: str, elements: List[Dict]) -> str:
+    """Create varied pages for numeric or unknown filenames."""
+    # Create different page types based on filename hash or pattern
+    filename_hash = hash(filename) % 5
+    
+    if filename_hash == 0:
+        print("✅ Creating ANALYTICS page (varied)")
+        return create_analytics_page(component_name)
+    elif filename_hash == 1:
+        print("✅ Creating SOCIAL page (varied)")
+        return create_social_page(component_name)
+    elif filename_hash == 2:
+        print("✅ Creating SETTINGS page (varied)")
+        return create_settings_page(component_name)
+    elif filename_hash == 3:
+        print("✅ Creating MESSAGING page (varied)")
+        return create_messaging_page(component_name)
+    else:
+        print("✅ Creating GALLERY page (varied)")
+        return create_gallery_page(component_name)
+
+def create_analytics_page(component_name: str) -> str:
+    """Create an analytics page component."""
+    return f"""import React from 'react';
+
+const {component_name} = () => {{
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto py-8 px-4">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Analytics Dashboard</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-sm font-medium text-gray-500">Page Views</h3>
+            <p className="text-3xl font-bold text-blue-600 mt-2">45,678</p>
+            <p className="text-sm text-green-600 mt-1">↗ +15% this week</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-sm font-medium text-gray-500">Unique Visitors</h3>
+            <p className="text-3xl font-bold text-green-600 mt-2">12,345</p>
+            <p className="text-sm text-green-600 mt-1">↗ +8% this week</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-sm font-medium text-gray-500">Bounce Rate</h3>
+            <p className="text-3xl font-bold text-orange-600 mt-2">32.5%</p>
+            <p className="text-sm text-red-600 mt-1">↘ -2% this week</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-sm font-medium text-gray-500">Conversion</h3>
+            <p className="text-3xl font-bold text-purple-600 mt-2">4.2%</p>
+            <p className="text-sm text-green-600 mt-1">↗ +0.8% this week</p>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Traffic Overview</h3>
+          <div className="h-64 bg-gray-100 rounded flex items-center justify-center">
+            <span className="text-gray-500">Analytics Chart Placeholder</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}};
+
+export default {component_name};"""
+
+def create_social_page(component_name: str) -> str:
+    """Create a social media page component."""
+    return f"""import React from 'react';
+
+const {component_name} = () => {{
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-4xl mx-auto py-8 px-4">
+        <div className="bg-white rounded-lg shadow mb-6">
+          <div className="p-6 border-b">
+            <h1 className="text-2xl font-bold text-gray-900">Social Feed</h1>
+          </div>
+          
+          <div className="p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-semibold">JD</span>
+              </div>
+              <input
+                type="text"
+                placeholder="What's on your mind?"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                Post
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div className="space-y-6">
+          {{[1,2,3].map(i => (
+            <div key={{i}} className="bg-white rounded-lg shadow">
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold">U{{i}}</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">User {{i}}</h3>
+                    <p className="text-sm text-gray-500">2 hours ago</p>
+                  </div>
+                </div>
+                <p className="text-gray-800 mb-4">
+                  This is a sample social media post with some interesting content to share with friends and followers.
+                </p>
+                <div className="flex items-center space-x-6 text-gray-500">
+                  <button className="flex items-center space-x-2 hover:text-blue-600">
+                    <span>👍</span>
+                    <span>Like</span>
+                  </button>
+                  <button className="flex items-center space-x-2 hover:text-blue-600">
+                    <span>💬</span>
+                    <span>Comment</span>
+                  </button>
+                  <button className="flex items-center space-x-2 hover:text-blue-600">
+                    <span>🔄</span>
+                    <span>Share</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}}
+        </div>
+      </div>
+    </div>
+  );
+}};
+
+export default {component_name};"""
+
+def create_settings_page(component_name: str) -> str:
+    """Create a settings page component."""
+    return f"""import React from 'react';
+
+const {component_name} = () => {{
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto py-8 px-4">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
+        
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6 border-b">
+            <h2 className="text-xl font-semibold text-gray-900">Account Settings</h2>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  value="John Doe"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value="john@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Preferences</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Email Notifications</span>
+                  <button className="bg-blue-600 w-12 h-6 rounded-full relative">
+                    <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1"></div>
+                  </button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Dark Mode</span>
+                  <button className="bg-gray-300 w-12 h-6 rounded-full relative">
+                    <div className="w-4 h-4 bg-white rounded-full absolute left-1 top-1"></div>
+                  </button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Auto-save</span>
+                  <button className="bg-blue-600 w-12 h-6 rounded-full relative">
+                    <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1"></div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex space-x-4">
+              <button className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                Save Changes
+              </button>
+              <button className="bg-gray-300 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-400">
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}};
+
+export default {component_name};"""
+
+def create_messaging_page(component_name: str) -> str:
+    """Create a messaging page component."""
+    return f"""import React from 'react';
+
+const {component_name} = () => {{
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto py-8 px-4">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="flex h-96">
+            <div className="w-1/3 border-r">
+              <div className="p-4 border-b">
+                <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
+              </div>
+              <div className="overflow-y-auto">
+                {{[1,2,3,4].map(i => (
+                  <div key={{i}} className="p-4 border-b hover:bg-gray-50 cursor-pointer">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-semibold">U{{i}}</span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">User {{i}}</h3>
+                        <p className="text-sm text-gray-500 truncate">Last message preview...</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}}
+              </div>
+            </div>
+            
+            <div className="flex-1 flex flex-col">
+              <div className="p-4 border-b">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-semibold">U1</span>
+                  </div>
+                  <h3 className="font-medium text-gray-900">User 1</h3>
+                </div>
+              </div>
+              
+              <div className="flex-1 p-4 overflow-y-auto">
+                <div className="space-y-4">
+                  <div className="flex justify-end">
+                    <div className="bg-blue-600 text-white px-4 py-2 rounded-lg max-w-xs">
+                      Hello! How are you doing?
+                    </div>
+                  </div>
+                  <div className="flex justify-start">
+                    <div className="bg-gray-200 text-gray-900 px-4 py-2 rounded-lg max-w-xs">
+                      Hi! I'm doing great, thanks for asking!
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 border-t">
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    placeholder="Type a message..."
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    Send
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}};
+
+export default {component_name};"""
+
+def create_gallery_page(component_name: str) -> str:
+    """Create a gallery page component."""
+    return f"""import React from 'react';
+
+const {component_name} = () => {{
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto py-8 px-4">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Photo Gallery</h1>
+          <p className="text-gray-600">Explore our collection of beautiful images</p>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {{[1,2,3,4,5,6,7,8,9,10,11,12].map(i => (
+            <div key={{i}} className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <div className="aspect-square bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center">
+                <span className="text-white text-lg font-semibold">Photo {{i}}</span>
+              </div>
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity flex items-center justify-center">
+                <button className="opacity-0 group-hover:opacity-100 bg-white text-gray-900 px-4 py-2 rounded-lg transition-opacity">
+                  View
+                </button>
+              </div>
+            </div>
+          ))}}
+        </div>
+        
+        <div className="text-center mt-8">
+          <button className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-200">
+            Load More Photos
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}};
+
+export default {component_name};"""
     """Create a unique page even for unknown filenames."""
     page_title = component_name.replace('Page', '').replace('Component', '')
     

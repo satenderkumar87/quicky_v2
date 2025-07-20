@@ -24,6 +24,7 @@ from agent.hosting import AppHosting
 from agent.simple_hosting import quick_deploy
 from agent.quick_build import lightning_deploy
 from agent.component_namer import generate_smart_component_name, reset_component_names
+from agent.image_analyzer import analyze_image_for_page_type
 
 app = Flask(__name__)
 app.secret_key = 'ai-ui-generator-secret-key-2024'
@@ -140,7 +141,7 @@ def generate_ui_from_uploads(uploaded_files: list, project_description: str):
             return
         
         generation_status['progress'] = 60
-        generation_status['message'] = 'Generating React components...'
+        generation_status['message'] = 'Analyzing images and generating React components...'
         
         # Reset component names for new project
         reset_component_names()
@@ -152,29 +153,47 @@ def generate_ui_from_uploads(uploaded_files: list, project_description: str):
         components_data = []
         for img_data in image_data:
             try:
-                # Generate smart component name without numbers
+                print(f"🔍 Processing {img_data['filename']}...")
+                
+                # ENHANCED: Analyze the actual image content to determine page type
+                print("🤖 Analyzing image content with LLM vision...")
+                image_analysis = analyze_image_for_page_type(
+                    image_data=img_data['raw_data'],  # Original image bytes
+                    filename=img_data['filename']
+                )
+                
+                # Generate smart component name using image analysis
                 component_name = generate_smart_component_name(
                     filename=img_data['filename'],
                     elements=img_data['elements'],
-                    project_description=project_description
+                    project_description=f"{project_description}. Page type: {image_analysis.get('page_type', 'generic')}"
                 )
                 
-                # Generate layout info for AI
+                # Enhanced layout info with image analysis
                 layout_info = {
                     'filename': img_data['filename'],
                     'layout_description': f"UI layout with {len(img_data['elements'])} detected elements",
                     'basic_elements': img_data['elements'],
-                    'dimensions': img_data['dimensions']
+                    'dimensions': img_data['dimensions'],
+                    # NEW: Add image analysis results
+                    'image_analysis': image_analysis,
+                    'page_type': image_analysis.get('page_type', 'generic'),
+                    'page_description': image_analysis.get('page_description', ''),
+                    'suggested_elements': image_analysis.get('main_elements', [])
                 }
                 
-                # Generate React component
+                print(f"📊 Image analysis: {image_analysis.get('page_type', 'unknown')} page")
+                print(f"🏷️  Component name: {component_name}")
+                
+                # Generate React component with enhanced context
                 component_code = ai_orchestrator.generate_react_component(layout_info, project_description)
                 
                 components_data.append({
                     'filename': img_data['filename'],
                     'component_name': component_name,
                     'layout_info': layout_info,
-                    'component_code': component_code
+                    'component_code': component_code,
+                    'page_type': image_analysis.get('page_type', 'generic')
                 })
                 
             except Exception as e:

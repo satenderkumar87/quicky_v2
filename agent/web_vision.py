@@ -79,6 +79,7 @@ class WebVisionProcessor:
                 'dimensions': {'width': width, 'height': height},
                 'elements': elements,
                 'image_base64': image_base64,
+                'raw_data': image_bytes,  # Add raw image data for LLM analysis
                 'file_size': len(image_bytes),
                 'format': image.format or 'JPEG'
             }
