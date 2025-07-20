@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Generated Projects - AI UI Generator{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-folder text-blue-600 mr-3"></i>
+            Generated Projects
+        </h1>
+        <p class="text-lg text-gray-600">
+            Manage and preview your AI-generated React applications
+        </p>
+    </div>
+
+    {% if projects %}
+    <!-- Projects Grid -->
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {% for project in projects %}
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <!-- Project Header -->
+            <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-4">
+                <h3 class="text-lg font-semibold text-white">
+                    {{ project.name.replace('project_', 'Project ') }}
+                </h3>
+                <p class="text-blue-100 text-sm">
+                    <i class="fas fa-calendar mr-1"></i>
+                    Created: {{ project.created }}
+                </p>
+            </div>
+            
+            <!-- Project Content -->
+            <div class="p-6">
+                <!-- Status -->
+                <div class="flex items-center mb-4">
+                    {% if project.has_package_json %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        Ready
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        Incomplete
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Project Info -->
+                <div class="space-y-2 mb-6">
+                    <p class="text-sm text-gray-600">
+                        <i class="fas fa-folder mr-1"></i>
+                        Location: {{ project.path }}
+                    </p>
+                    <p class="text-sm text-gray-600">
+                        <i class="fas fa-code mr-1"></i>
+                        React + Tailwind + Vite
+                    </p>
+                </div>
+                
+                <!-- Actions -->
+                <div class="space-y-2">
+                    {% if project.has_package_json %}
+                    <a href="/preview/{{ project.name }}" 
+                       class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium text-center block">
+                        <i class="fas fa-eye mr-2"></i>
+                        Preview App
+                    </a>
+                    {% endif %}
+                    
+                    <div class="flex space-x-2">
+                        <a href="/download/{{ project.name }}" 
+                           class="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium text-center">
+                            <i class="fas fa-download mr-1"></i>
+                            Download
+                        </a>
+                        <button onclick="deleteProject('{{ project.name }}')" 
+                                class="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium">
+                            <i class="fas fa-trash mr-1"></i>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination or Load More (if needed) -->
+    {% if projects|length > 9 %}
+    <div class="text-center mt-8">
+        <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg">
+            Load More Projects
+        </button>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <div class="bg-gray-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-folder-open text-gray-400 text-3xl"></i>
+        </div>
+        <h2 class="text-2xl font-semibold text-gray-900 mb-4">No Projects Yet</h2>
+        <p class="text-gray-600 mb-8 max-w-md mx-auto">
+            You haven't generated any React applications yet. Upload some UI screenshots to get started!
+        </p>
+        <a href="/" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium">
+            <i class="fas fa-plus mr-2"></i>
+            Create Your First Project
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="mt-12 bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+            <i class="fas fa-tools text-orange-600 mr-2"></i>
+            Quick Actions
+        </h2>
+        
+        <div class="grid gap-4 md:grid-cols-3">
+            <a href="/" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                <i class="fas fa-plus text-blue-600 text-xl mr-3"></i>
+                <div>
+                    <h3 class="font-semibold text-gray-900">New Project</h3>
+                    <p class="text-sm text-gray-600">Generate another React app</p>
+                </div>
+            </a>
+            
+            <button onclick="cleanupOldProjects()" 
+                    class="flex items-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
+                <i class="fas fa-broom text-yellow-600 text-xl mr-3"></i>
+                <div>
+                    <h3 class="font-semibold text-gray-900">Cleanup</h3>
+                    <p class="text-sm text-gray-600">Remove old projects</p>
+                </div>
+            </button>
+            
+            <button onclick="exportAllProjects()" 
+                    class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                <i class="fas fa-file-export text-green-600 text-xl mr-3"></i>
+                <div>
+                    <h3 class="font-semibold text-gray-900">Export All</h3>
+                    <p class="text-sm text-gray-600">Download all projects</p>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div class="text-center">
+            <div class="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete Project</h3>
+            <p class="text-gray-600 mb-6">
+                Are you sure you want to delete this project? This action cannot be undone.
+            </p>
+            
+            <div class="flex space-x-3">
+                <button onclick="hideDeleteModal()" 
+                        class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">
+                    Cancel
+                </button>
+                <button id="confirmDeleteBtn" 
+                        class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let projectToDelete = null;
+
+function deleteProject(projectName) {
+    projectToDelete = projectName;
+    document.getElementById('deleteModal').classList.remove('hidden');
+    document.getElementById('deleteModal').classList.add('flex');
+    
+    document.getElementById('confirmDeleteBtn').onclick = () => {
+        // In a real implementation, this would make an API call to delete the project
+        console.log('Deleting project:', projectToDelete);
+        alert('Delete functionality would be implemented here');
+        hideDeleteModal();
+    };
+}
+
+function hideDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    document.getElementById('deleteModal').classList.remove('flex');
+    projectToDelete = null;
+}
+
+function cleanupOldProjects() {
+    if (confirm('This will remove projects older than 30 days. Continue?')) {
+        // Implementation would go here
+        alert('Cleanup functionality would be implemented here');
+    }
+}
+
+function exportAllProjects() {
+    // Implementation would go here
+    alert('Export all functionality would be implemented here');
+}
+
+// Close modal when clicking outside
+document.getElementById('deleteModal').addEventListener('click', (e) => {
+    if (e.target.id === 'deleteModal') {
+        hideDeleteModal();
+    }
+});
+</script>
+{% endblock %}

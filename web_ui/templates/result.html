@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Generation Complete - AI UI Generator{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <!-- Success Header -->
+    <div class="text-center mb-8">
+        <div class="bg-green-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-check text-green-600 text-3xl"></i>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">
+            🎉 Your React App is Ready!
+        </h1>
+        <p class="text-xl text-gray-600">
+            Generated {{ result.components_generated }} React components from your UI screenshots
+        </p>
+    </div>
+
+    <!-- Result Cards -->
+    <div class="max-w-4xl mx-auto space-y-6">
+        <!-- Live Preview Card -->
+        {% if result.local_url %}
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-eye text-blue-600 mr-2"></i>
+                Live Preview
+            </h2>
+            
+            <div class="grid gap-4 md:grid-cols-2">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-desktop mr-1"></i>
+                        Local Development Server
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-3">Access your app locally with hot reload</p>
+                    <a href="{{ result.local_url }}" target="_blank" 
+                       class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                        <i class="fas fa-external-link-alt mr-2"></i>
+                        Open Local App
+                    </a>
+                    <p class="text-xs text-gray-500 mt-2">{{ result.local_url }}</p>
+                </div>
+                
+                {% if result.public_url %}
+                <div class="bg-green-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-globe mr-1"></i>
+                        Public Shareable URL
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-3">Share this URL with anyone</p>
+                    <div class="space-y-2">
+                        <a href="{{ result.public_url }}" target="_blank" 
+                           class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                            <i class="fas fa-external-link-alt mr-2"></i>
+                            Open Public App
+                        </a>
+                        <button onclick="copyToClipboard('{{ result.public_url }}')" 
+                                class="ml-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm">
+                            <i class="fas fa-copy mr-1"></i>
+                            Copy URL
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">{{ result.public_url }}</p>
+                </div>
+                {% else %}
+                <div class="bg-yellow-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Public URL Not Available
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-3">Install ngrok for public URL sharing</p>
+                    <a href="https://ngrok.com/download" target="_blank" 
+                       class="inline-flex items-center bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                        <i class="fas fa-download mr-2"></i>
+                        Install ngrok
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Project Details Card -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-code text-purple-600 mr-2"></i>
+                Project Details
+            </h2>
+            
+            <div class="grid gap-4 md:grid-cols-3">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-900 mb-2">Components Generated</h3>
+                    <p class="text-2xl font-bold text-purple-600">{{ result.components_generated }}</p>
+                    <p class="text-sm text-gray-600">React functional components</p>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-900 mb-2">Technology Stack</h3>
+                    <div class="space-y-1 text-sm">
+                        <p><i class="fab fa-react text-blue-500 mr-1"></i> React 18</p>
+                        <p><i class="fas fa-wind text-cyan-500 mr-1"></i> Tailwind CSS</p>
+                        <p><i class="fas fa-bolt text-yellow-500 mr-1"></i> Vite</p>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-900 mb-2">
+                        {% if result.build_time %}
+                        Build Performance
+                        {% else %}
+                        Features
+                        {% endif %}
+                    </h3>
+                    {% if result.build_time %}
+                    <p class="text-2xl font-bold text-green-600">{{ result.build_time }}</p>
+                    <p class="text-sm text-gray-600">⚡ Lightning fast build</p>
+                    {% else %}
+                    <div class="space-y-1 text-sm">
+                        <p><i class="fas fa-mobile-alt text-green-500 mr-1"></i> Responsive Design</p>
+                        <p><i class="fas fa-universal-access text-blue-500 mr-1"></i> Accessible</p>
+                        <p><i class="fas fa-route text-purple-500 mr-1"></i> React Router</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Card -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-tools text-orange-600 mr-2"></i>
+                Next Steps
+            </h2>
+            
+            <div class="grid gap-4 md:grid-cols-2">
+                <div class="space-y-3">
+                    <h3 class="font-semibold text-gray-900">Development</h3>
+                    <div class="space-y-2 text-sm">
+                        <p class="flex items-center">
+                            <i class="fas fa-download text-blue-500 mr-2"></i>
+                            <a href="/download/{{ result.project_dir.split('/')[-1] }}" 
+                               class="text-blue-600 hover:text-blue-800">Download Project Files</a>
+                        </p>
+                        <p class="flex items-center">
+                            <i class="fas fa-folder text-gray-500 mr-2"></i>
+                            <a href="/projects" class="text-blue-600 hover:text-blue-800">View All Projects</a>
+                        </p>
+                        <p class="flex items-center">
+                            <i class="fas fa-code text-green-500 mr-2"></i>
+                            Customize components and styling
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <h3 class="font-semibold text-gray-900">Deployment</h3>
+                    <div class="space-y-2 text-sm">
+                        <p class="flex items-center">
+                            <i class="fas fa-cloud text-blue-500 mr-2"></i>
+                            Deploy to Vercel, Netlify, or AWS
+                        </p>
+                        <p class="flex items-center">
+                            <i class="fas fa-share-alt text-purple-500 mr-2"></i>
+                            Share with team members
+                        </p>
+                        <p class="flex items-center">
+                            <i class="fas fa-rocket text-orange-500 mr-2"></i>
+                            Launch your production app
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Setup Instructions -->
+        {% if result.manual_instructions %}
+        <div class="bg-yellow-50 rounded-lg p-6 border border-yellow-200">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">
+                <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+                Manual Setup Required
+            </h3>
+            <p class="text-gray-700 mb-4">
+                Automatic hosting encountered issues. You can run the project manually using these commands:
+            </p>
+            <div class="bg-gray-900 rounded-lg p-4 text-green-400 font-mono text-sm">
+                <p>{{ result.manual_instructions }}</p>
+            </div>
+            <p class="text-sm text-gray-600 mt-3">
+                <i class="fas fa-info-circle mr-1"></i>
+                The React project has been generated successfully and is ready to run.
+            </p>
+        </div>
+        {% else %}
+        <div class="bg-gray-50 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">
+                <i class="fas fa-terminal text-gray-600 mr-2"></i>
+                Manual Setup Instructions
+            </h3>
+            <div class="bg-gray-900 rounded-lg p-4 text-green-400 font-mono text-sm">
+                <p># Navigate to project directory</p>
+                <p>cd {{ result.project_dir }}</p>
+                <p></p>
+                <p># Install dependencies</p>
+                <p>npm install</p>
+                <p></p>
+                <p># Start development server</p>
+                <p>npm run dev</p>
+                <p></p>
+                <p># Build for production</p>
+                <p>npm run build</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="text-center space-x-4">
+            <a href="/" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium">
+                <i class="fas fa-plus mr-2"></i>
+                Generate Another App
+            </a>
+            <a href="/projects" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium">
+                <i class="fas fa-folder mr-2"></i>
+                View All Projects
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show success message
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+        button.classList.add('bg-green-100', 'text-green-700');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('bg-green-100', 'text-green-700');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        alert('Failed to copy URL to clipboard');
+    });
+}
+</script>
+{% endblock %}

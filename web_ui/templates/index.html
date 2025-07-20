@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Upload UI Screenshots - AI UI Generator{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-magic text-blue-600 mr-3"></i>
+            AI UI Generator
+        </h1>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            Upload UI screenshots and get production-ready React applications with automatic hosting and shareable URLs
+        </p>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="max-w-4xl mx-auto">
+        <form id="uploadForm" enctype="multipart/form-data" class="space-y-6">
+            <!-- File Upload Area -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-images text-blue-600 mr-2"></i>
+                    Upload UI Screenshots
+                </h2>
+                
+                <div id="uploadArea" class="upload-area rounded-lg p-8 text-center cursor-pointer">
+                    <div id="uploadContent">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-lg text-gray-600 mb-2">
+                            Drag and drop your UI screenshots here, or click to browse
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            Supports PNG, JPG, JPEG, GIF, WebP (Max 16MB each)
+                        </p>
+                        <input type="file" id="fileInput" name="files" multiple accept="image/*" class="hidden">
+                        <button type="button" onclick="document.getElementById('fileInput').click()" 
+                                class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+                            Choose Files
+                        </button>
+                    </div>
+                    
+                    <!-- File Preview Area -->
+                    <div id="filePreview" class="hidden mt-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Selected Files:</h3>
+                        <div id="fileList" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Description -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-edit text-green-600 mr-2"></i>
+                    Project Description
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                            Describe your project and design requirements
+                        </label>
+                        <textarea id="description" name="description" rows="6" 
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Example: A modern e-commerce dashboard with sidebar navigation, product grid, data tables, and professional styling using blue and gray colors..."></textarea>
+                    </div>
+                    
+                    <!-- Example Descriptions -->
+                    <div>
+                        <p class="text-sm font-medium text-gray-700 mb-2">Quick Examples:</p>
+                        <div id="exampleButtons" class="flex flex-wrap gap-2">
+                            <!-- Examples will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <div class="text-center">
+                <button type="submit" id="generateBtn" 
+                        class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg transform transition hover:scale-105">
+                    <i class="fas fa-magic mr-2"></i>
+                    Generate React Application
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Progress Modal -->
+    <div id="progressModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Generating Your UI</h3>
+                <p id="progressMessage" class="text-gray-600 mb-4">Processing uploaded files...</p>
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div id="progressBar" class="progress-bar bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                
+                <p class="text-sm text-gray-500">This may take a few minutes...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="max-w-6xl mx-auto mt-16">
+        <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">How It Works</h2>
+        
+        <div class="grid gap-8 md:grid-cols-3">
+            <div class="text-center">
+                <div class="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-upload text-blue-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">1. Upload Screenshots</h3>
+                <p class="text-gray-600">Upload your UI screenshots and describe your project requirements</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-brain text-green-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">2. AI Analysis</h3>
+                <p class="text-gray-600">AI analyzes your designs and generates production-ready React components</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-rocket text-purple-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">3. Live Application</h3>
+                <p class="text-gray-600">Get a hosted React app with shareable URLs for instant preview</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// File upload handling
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const filePreview = document.getElementById('filePreview');
+const fileList = document.getElementById('fileList');
+const uploadForm = document.getElementById('uploadForm');
+const progressModal = document.getElementById('progressModal');
+const progressBar = document.getElementById('progressBar');
+const progressMessage = document.getElementById('progressMessage');
+
+let selectedFiles = [];
+
+// Drag and drop handlers
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+});
+
+// File input change handler
+fileInput.addEventListener('change', (e) => {
+    handleFiles(e.target.files);
+});
+
+// Handle selected files
+function handleFiles(files) {
+    selectedFiles = Array.from(files);
+    displayFilePreview();
+}
+
+// Display file preview
+function displayFilePreview() {
+    if (selectedFiles.length === 0) {
+        filePreview.classList.add('hidden');
+        return;
+    }
+    
+    filePreview.classList.remove('hidden');
+    fileList.innerHTML = '';
+    
+    selectedFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'bg-gray-50 rounded-lg p-4 border';
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            fileItem.innerHTML = `
+                <img src="${e.target.result}" alt="${file.name}" class="w-full h-32 object-cover rounded mb-2">
+                <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
+                <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                <button type="button" onclick="removeFile(${index})" 
+                        class="mt-2 text-red-600 hover:text-red-800 text-xs">
+                    <i class="fas fa-trash mr-1"></i>Remove
+                </button>
+            `;
+        };
+        reader.readAsDataURL(file);
+        
+        fileList.appendChild(fileItem);
+    });
+}
+
+// Remove file
+function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    displayFilePreview();
+}
+
+// Load example descriptions
+async function loadExamples() {
+    try {
+        const response = await fetch('/api/examples');
+        const examples = await response.json();
+        
+        const exampleButtons = document.getElementById('exampleButtons');
+        examples.forEach(example => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-sm';
+            button.textContent = example.title;
+            button.onclick = () => {
+                document.getElementById('description').value = example.description;
+            };
+            exampleButtons.appendChild(button);
+        });
+    } catch (error) {
+        console.error('Failed to load examples:', error);
+    }
+}
+
+// Form submission
+uploadForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (selectedFiles.length === 0) {
+        alert('Please select at least one image file');
+        return;
+    }
+    
+    const formData = new FormData();
+    selectedFiles.forEach(file => {
+        formData.append('files', file);
+    });
+    formData.append('description', document.getElementById('description').value);
+    
+    // Show progress modal
+    progressModal.classList.remove('hidden');
+    progressModal.classList.add('flex');
+    
+    try {
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Start polling for status
+            pollStatus();
+        } else {
+            throw new Error(result.error || 'Upload failed');
+        }
+    } catch (error) {
+        alert('Upload failed: ' + error.message);
+        hideProgressModal();
+    }
+});
+
+// Poll generation status
+async function pollStatus() {
+    try {
+        const response = await fetch('/status');
+        const status = await response.json();
+        
+        // Update progress
+        progressBar.style.width = status.progress + '%';
+        progressMessage.textContent = status.message;
+        
+        if (status.status === 'completed') {
+            // Redirect to result page
+            window.location.href = '/result';
+        } else if (status.status === 'error') {
+            alert('Generation failed: ' + status.error);
+            hideProgressModal();
+        } else {
+            // Continue polling
+            setTimeout(pollStatus, 2000);
+        }
+    } catch (error) {
+        console.error('Status polling failed:', error);
+        setTimeout(pollStatus, 5000); // Retry after 5 seconds
+    }
+}
+
+// Hide progress modal
+function hideProgressModal() {
+    progressModal.classList.add('hidden');
+    progressModal.classList.remove('flex');
+}
+
+// Load examples on page load
+document.addEventListener('DOMContentLoaded', loadExamples);
+</script>
+{% endblock %}

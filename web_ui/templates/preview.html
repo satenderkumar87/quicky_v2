@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}Preview {{ project_name }} - AI UI Generator{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-eye text-blue-600 mr-3"></i>
+                    Preview: {{ project_name.replace('project_', 'Project ') }}
+                </h1>
+                <p class="text-gray-600">Live preview of your generated React application</p>
+            </div>
+            <a href="/projects" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to Projects
+            </a>
+        </div>
+    </div>
+
+    <!-- Preview URLs -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+            <i class="fas fa-link text-green-600 mr-2"></i>
+            Access URLs
+        </h2>
+        
+        <div class="grid gap-4 md:grid-cols-2">
+            <!-- Local URL -->
+            <div class="bg-blue-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-900 mb-2">
+                    <i class="fas fa-desktop mr-1"></i>
+                    Local Development Server
+                </h3>
+                <p class="text-sm text-gray-600 mb-3">Access locally with hot reload</p>
+                <div class="flex items-center space-x-2">
+                    <a href="{{ local_url }}" target="_blank" 
+                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                        <i class="fas fa-external-link-alt mr-1"></i>
+                        Open App
+                    </a>
+                    <button onclick="copyToClipboard('{{ local_url }}')" 
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm">
+                        <i class="fas fa-copy mr-1"></i>
+                        Copy
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 font-mono">{{ local_url }}</p>
+            </div>
+            
+            <!-- Public URL -->
+            {% if public_url %}
+            <div class="bg-green-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-900 mb-2">
+                    <i class="fas fa-globe mr-1"></i>
+                    Public Shareable URL
+                </h3>
+                <p class="text-sm text-gray-600 mb-3">Share with anyone, anywhere</p>
+                <div class="flex items-center space-x-2">
+                    <a href="{{ public_url }}" target="_blank" 
+                       class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                        <i class="fas fa-external-link-alt mr-1"></i>
+                        Open App
+                    </a>
+                    <button onclick="copyToClipboard('{{ public_url }}')" 
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm">
+                        <i class="fas fa-copy mr-1"></i>
+                        Copy
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 font-mono">{{ public_url }}</p>
+            </div>
+            {% else %}
+            <div class="bg-yellow-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-900 mb-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Public URL Not Available
+                </h3>
+                <p class="text-sm text-gray-600 mb-3">Install ngrok for public URL sharing</p>
+                <a href="https://ngrok.com/download" target="_blank" 
+                   class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    <i class="fas fa-download mr-1"></i>
+                    Install ngrok
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Embedded Preview -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="bg-gray-50 px-6 py-4 border-b">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-gray-900">
+                    <i class="fas fa-browser text-purple-600 mr-2"></i>
+                    Live Preview
+                </h2>
+                <div class="flex items-center space-x-2">
+                    <button onclick="refreshPreview()" 
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm">
+                        <i class="fas fa-sync-alt mr-1"></i>
+                        Refresh
+                    </button>
+                    <button onclick="toggleFullscreen()" 
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm">
+                        <i class="fas fa-expand mr-1"></i>
+                        Fullscreen
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Preview Frame -->
+        <div class="relative">
+            <iframe id="previewFrame" 
+                    src="{{ local_url }}" 
+                    class="w-full h-96 md:h-screen border-0"
+                    title="App Preview">
+            </iframe>
+            
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center">
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p class="text-gray-600">Loading preview...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Development Tools -->
+    <div class="mt-6 bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+            <i class="fas fa-tools text-orange-600 mr-2"></i>
+            Development Tools
+        </h2>
+        
+        <div class="grid gap-4 md:grid-cols-3">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-900 mb-2">
+                    <i class="fas fa-code mr-1"></i>
+                    Source Code
+                </h3>
+                <p class="text-sm text-gray-600 mb-3">Download and customize the generated code</p>
+                <a href="/download/{{ project_name }}" 
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    <i class="fas fa-download mr-1"></i>
+                    Download Project
+                </a>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-900 mb-2">
+                    <i class="fas fa-terminal mr-1"></i>
+                    Local Development
+                </h3>
+                <p class="text-sm text-gray-600 mb-3">Run the project on your machine</p>
+                <button onclick="showCommands()" 
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    <i class="fas fa-terminal mr-1"></i>
+                    Show Commands
+                </button>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-900 mb-2">
+                    <i class="fas fa-share-alt mr-1"></i>
+                    Share & Deploy
+                </h3>
+                <p class="text-sm text-gray-600 mb-3">Deploy to production platforms</p>
+                <button onclick="showDeployOptions()" 
+                        class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    <i class="fas fa-rocket mr-1"></i>
+                    Deploy Options
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Commands Modal -->
+<div id="commandsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Development Commands</h3>
+            <button onclick="hideCommandsModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="bg-gray-900 rounded-lg p-4 text-green-400 font-mono text-sm">
+            <p># Navigate to project directory</p>
+            <p>cd generated_projects/{{ project_name }}</p>
+            <p></p>
+            <p># Install dependencies</p>
+            <p>npm install</p>
+            <p></p>
+            <p># Start development server</p>
+            <p>npm run dev</p>
+            <p></p>
+            <p># Build for production</p>
+            <p>npm run build</p>
+            <p></p>
+            <p># Preview production build</p>
+            <p>npm run preview</p>
+        </div>
+        
+        <div class="mt-4 text-right">
+            <button onclick="copyCommands()" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                <i class="fas fa-copy mr-1"></i>
+                Copy Commands
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Deploy Options Modal -->
+<div id="deployModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Deployment Options</h3>
+            <button onclick="hideDeployModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="grid gap-4 md:grid-cols-2">
+            <a href="https://vercel.com" target="_blank" 
+               class="flex items-center p-4 border rounded-lg hover:bg-gray-50">
+                <div class="bg-black text-white rounded p-2 mr-3">
+                    <i class="fas fa-triangle"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold">Vercel</h4>
+                    <p class="text-sm text-gray-600">Deploy with zero configuration</p>
+                </div>
+            </a>
+            
+            <a href="https://netlify.com" target="_blank" 
+               class="flex items-center p-4 border rounded-lg hover:bg-gray-50">
+                <div class="bg-teal-500 text-white rounded p-2 mr-3">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold">Netlify</h4>
+                    <p class="text-sm text-gray-600">Continuous deployment from Git</p>
+                </div>
+            </a>
+            
+            <a href="https://aws.amazon.com/amplify/" target="_blank" 
+               class="flex items-center p-4 border rounded-lg hover:bg-gray-50">
+                <div class="bg-orange-500 text-white rounded p-2 mr-3">
+                    <i class="fab fa-aws"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold">AWS Amplify</h4>
+                    <p class="text-sm text-gray-600">Full-stack deployment</p>
+                </div>
+            </a>
+            
+            <a href="https://pages.github.com" target="_blank" 
+               class="flex items-center p-4 border rounded-lg hover:bg-gray-50">
+                <div class="bg-gray-800 text-white rounded p-2 mr-3">
+                    <i class="fab fa-github"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold">GitHub Pages</h4>
+                    <p class="text-sm text-gray-600">Free hosting for static sites</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Hide loading overlay when iframe loads
+document.getElementById('previewFrame').addEventListener('load', () => {
+    document.getElementById('loadingOverlay').style.display = 'none';
+});
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+        button.classList.add('bg-green-100', 'text-green-700');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('bg-green-100', 'text-green-700');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        alert('Failed to copy URL to clipboard');
+    });
+}
+
+function refreshPreview() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('previewFrame').src = document.getElementById('previewFrame').src;
+}
+
+function toggleFullscreen() {
+    const frame = document.getElementById('previewFrame');
+    if (frame.requestFullscreen) {
+        frame.requestFullscreen();
+    } else if (frame.webkitRequestFullscreen) {
+        frame.webkitRequestFullscreen();
+    } else if (frame.msRequestFullscreen) {
+        frame.msRequestFullscreen();
+    }
+}
+
+function showCommands() {
+    document.getElementById('commandsModal').classList.remove('hidden');
+    document.getElementById('commandsModal').classList.add('flex');
+}
+
+function hideCommandsModal() {
+    document.getElementById('commandsModal').classList.add('hidden');
+    document.getElementById('commandsModal').classList.remove('flex');
+}
+
+function showDeployOptions() {
+    document.getElementById('deployModal').classList.remove('hidden');
+    document.getElementById('deployModal').classList.add('flex');
+}
+
+function hideDeployModal() {
+    document.getElementById('deployModal').classList.add('hidden');
+    document.getElementById('deployModal').classList.remove('flex');
+}
+
+function copyCommands() {
+    const commands = `cd generated_projects/{{ project_name }}
+npm install
+npm run dev
+npm run build
+npm run preview`;
+    
+    navigator.clipboard.writeText(commands).then(() => {
+        alert('Commands copied to clipboard!');
+    });
+}
+
+// Close modals when clicking outside
+document.getElementById('commandsModal').addEventListener('click', (e) => {
+    if (e.target.id === 'commandsModal') hideCommandsModal();
+});
+
+document.getElementById('deployModal').addEventListener('click', (e) => {
+    if (e.target.id === 'deployModal') hideDeployModal();
+});
+</script>
+{% endblock %}
