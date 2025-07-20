@@ -128,8 +128,8 @@ Project Description:
 ## 🖥️ Run Locally
 
 ```bash
-git clone https://github.com/yourname/ai-ui-generator
-cd ai-ui-generator
+git clone https://github.com/satenderkumar87/quicky_v2
+cd quicky_v2
 
 # Install Python packages
 pip install -r requirements.txt
@@ -138,7 +138,7 @@ pip install -r requirements.txt
 export OPENAI_API_KEY=your-key-here
 
 # Run the generator
-python main.py
+python web-ui/app.py
 
 # Start local Vite dev server (after generation)
 cd generated_project
